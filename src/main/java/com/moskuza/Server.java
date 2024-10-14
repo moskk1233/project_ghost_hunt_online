@@ -71,6 +71,14 @@ public class Server extends JFrame {
                 }
             } catch (Exception e) {
                 e.printStackTrace();
+            } finally {
+                try {
+                    socket.close();
+                    out.close();
+                    in.close();
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
 

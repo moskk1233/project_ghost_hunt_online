@@ -1,6 +1,7 @@
 package com.moskuza.views;
 
 import com.moskuza.controller.GameController;
+import com.moskuza.entity.Ghost;
 import com.moskuza.entity.Player;
 
 import javax.swing.*;
@@ -15,6 +16,7 @@ public class PlayView extends JPanel {
     final Image backgroundImage;
     final Image bulletImage;
     final Image crosshairImage;
+    final Image ghostImage;
 
     int bulletAmount;
     final Player player;
@@ -22,6 +24,8 @@ public class PlayView extends JPanel {
     private GameController gameController;
 
     public PlayView() {
+        setSize(new Dimension(1024, 800));
+
         URL backgroundUrl = getClass().getResource("/images/ghost_house.jpg");
         this.backgroundImage = Toolkit.getDefaultToolkit().createImage(backgroundUrl);
 
@@ -31,6 +35,9 @@ public class PlayView extends JPanel {
 
         URL crosshairUrl = getClass().getResource("/images/crosshair.png");
         this.crosshairImage = Toolkit.getDefaultToolkit().createImage(crosshairUrl);
+
+        URL ghostUrl = getClass().getResource("/images/ghost.png");
+        this.ghostImage = Toolkit.getDefaultToolkit().createImage(ghostUrl);
 
         // Add Player
         this.player = new Player();
@@ -69,11 +76,18 @@ public class PlayView extends JPanel {
 //        g.drawString("Player %s".formatted(this.player.getId().toString().substring(0, 8)), player.getX() - 60, player.getY() - 20);
 //        g.drawImage(this.crosshairImage, player.getX() - 20, player.getY() - 20, 35, 35, this);
 
+        // Draw Player
         for (Map.Entry<UUID, Player> entry : gameController.getPlayers().entrySet()) {
             Player player = entry.getValue();
             System.out.println(player.getX() + " " + player.getY());
             g.drawString("Player %s".formatted(player.getId().toString().substring(0, 8)), player.getX() - 60, player.getY() - 20);
             g.drawImage(this.crosshairImage, player.getX() - 20, player.getY() - 20, 35, 35, this);
+        }
+
+        // Draw Ghosts
+        for (Ghost ghost : gameController.getGhosts()) {
+            g.drawImage(this.ghostImage, ghost.getX(), ghost.getY(), 80, 80, this);  // วาดผี
+            g.drawRect(ghost.getX(), ghost.getY(), 80, 80); // Hitbox
         }
 
         // Draw Scoreboard

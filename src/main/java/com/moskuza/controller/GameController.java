@@ -16,9 +16,17 @@ public class GameController {
     private ObjectOutputStream out;
 
     private Map<UUID, Player> players;
+    private ArrayList<Ghost> ghosts = new ArrayList<>();
+
+    private PlayView playView;
 
     public GameController(PlayView playView) {
+        this.playView = playView;
         this.players = new HashMap<>();
+        this.ghosts = createGhosts();
+
+        new GhostMovementController(this.ghosts, playView);
+
         Thread.ofVirtual().start(() -> {
             try {
                 this.socket = new Socket("127.0.0.1", 12345);
@@ -57,5 +65,21 @@ public class GameController {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private ArrayList<Ghost> createGhosts() {
+        ArrayList<Ghost> ghosts = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            Ghost ghost = new Ghost();
+            ghost.setX(new Random().nextInt(0, 1024));
+            ghost.setY(new Random().nextInt(0, 800));
+            ghosts.add(ghost);
+        }
+
+        return ghosts;
+    }
+
+    public ArrayList<Ghost> getGhosts() {
+        return this.ghosts;
     }
 }
