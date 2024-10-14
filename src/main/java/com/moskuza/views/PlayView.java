@@ -1,3 +1,4 @@
+// PlayView.java
 package com.moskuza.views;
 
 import com.moskuza.controller.GameController;
@@ -17,11 +18,10 @@ public class PlayView extends JPanel {
     final Image bulletImage;
     final Image crosshairImage;
     final Image ghostImage;
-
     int bulletAmount;
     final Player player;
+    private final GameController gameController;
 
-    private GameController gameController;
 
     public PlayView() {
         setSize(new Dimension(1024, 800));
@@ -47,47 +47,38 @@ public class PlayView extends JPanel {
         this.addMouseMotionListener(new MouseAdapter() {
             @Override
             public void mouseMoved(MouseEvent e) {
-                int mouseX = e.getX();
-                int mouseY = e.getY();
-
-                player.setX(mouseX);
-                player.setY(mouseY);
-
+                // อัปเดตตำแหน่งของ Player และ Crosshair ตามเมาส์
+                player.setX(e.getX());
+                player.setY(e.getY());
                 gameController.sendObject(player);
-
                 instance.repaint(); // เรียก repaint เพื่อแสดงผลการเคลื่อนไหวของ Player
             }
         });
     }
 
     @Override
-    public void paint(Graphics g)  {
+    public void paint(Graphics g) {
+        super.paint(g); // เรียก super.paint(g) เพื่อให้แน่ใจว่า Panel ได้รับการวาดอย่างถูกต้อง
         g.drawImage(this.backgroundImage, 0, 0, 1024, 800, this);
         for (int i = 0; i < this.bulletAmount; i++) {
             final int BULLET_OFFSET = 40;
             g.drawImage(this.bulletImage, (BULLET_OFFSET * i), 700, 60, 60, this);
         }
 
-
         g.setFont(new Font("Tahoma", Font.PLAIN, 20));
         g.setColor(Color.WHITE);
-
-        // Draw Player
-//        g.drawString("Player %s".formatted(this.player.getId().toString().substring(0, 8)), player.getX() - 60, player.getY() - 20);
-//        g.drawImage(this.crosshairImage, player.getX() - 20, player.getY() - 20, 35, 35, this);
-
-        // Draw Player
-        for (Map.Entry<UUID, Player> entry : gameController.getPlayers().entrySet()) {
-            Player player = entry.getValue();
-            System.out.println(player.getX() + " " + player.getY());
-            g.drawString("Player %s".formatted(player.getId().toString().substring(0, 8)), player.getX() - 60, player.getY() - 20);
-            g.drawImage(this.crosshairImage, player.getX() - 20, player.getY() - 20, 35, 35, this);
-        }
 
         // Draw Ghosts
         for (Ghost ghost : gameController.getGhosts()) {
             g.drawImage(this.ghostImage, ghost.getX(), ghost.getY(), 80, 80, this);  // วาดผี
             g.drawRect(ghost.getX(), ghost.getY(), 80, 80); // Hitbox
+        }
+
+        // Draw Player
+        for (Map.Entry<UUID, Player> entry : gameController.getPlayers().entrySet()) {
+            Player player = entry.getValue();
+            g.drawString("Player %s".formatted(player.getId().toString().substring(0, 8)), player.getX() - 60, player.getY() - 20);
+            g.drawImage(this.crosshairImage, player.getX() - 20, player.getY() - 20, 35, 35, this);
         }
 
         // Draw Scoreboard
