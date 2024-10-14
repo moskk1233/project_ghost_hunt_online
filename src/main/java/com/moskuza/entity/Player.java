@@ -1,18 +1,36 @@
 package com.moskuza.entity;
 
-public class Player extends Entity {
-    private int id;
+import java.util.UUID;
 
-    public Player(int id) {
+public class Player extends Entity {
+    private final UUID id;
+    private int ammo;
+    private int score;
+
+    public Player() {
         super();
-        this.id = id;
+        this.id = UUID.randomUUID();
+        this.ammo = 5;
+        this.score = 0;
     }
 
-    public int getId() {
+    public UUID getId() {
         return this.id;
     }
 
-    public void setId(int id) {
-        this.id = id;
+    public int getAmmo() {
+        return this.ammo;
+    }
+
+    public void setAmmo(int ammo) {
+        this.ammo = ammo;
+    }
+
+    public int getScore() {
+        return this.score;
+    }
+
+    public void setScore(int score) {
+        this.score = score;
     }
 }

@@ -2,55 +2,60 @@ package com.moskuza.controller;
 
 import com.moskuza.entity.Ghost;
 import com.moskuza.entity.Player;
+import com.moskuza.views.PlayView;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.net.Socket;
+import java.util.*;
 
 public class GameController {
-    private int wave;
-    private List<Player> players;
-    private List<Ghost> ghosts;
+    private Socket socket;
+    private ObjectInputStream in;
+    private ObjectOutputStream out;
 
-    public GameController() {
-        this.wave = 1;
-        this.players = new ArrayList<>();
-        this.ghosts = new ArrayList<>();
-        this.ghosts.add(new Ghost());
-        this.ghosts.add(new Ghost());
-        this.ghosts.add(new Ghost());
-        this.ghosts.add(new Ghost());
-        this.ghosts.add(new Ghost());
+    private Map<UUID, Player> players;
+
+    public GameController(PlayView playView) {
+        this.players = new HashMap<>();
+        Thread.ofVirtual().start(() -> {
+            try {
+                this.socket = new Socket("127.0.0.1", 12345);
+                this.out = new ObjectOutputStream(socket.getOutputStream());
+                this.in = new ObjectInputStream(socket.getInputStream());
+
+                while (true) {
+
+                    Object obj = in.readObject();
+                    if (obj instanceof Player player) {
+                        updatePlayer(player.getId(), player);
+                        playView.repaint();
+                    }
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } catch (ClassNotFoundException e) {
+                e.printStackTrace();
+            }
+        });
     }
 
-    public int getWave() {
-        return wave;
+    public void updatePlayer(UUID playerId, Player player) {
+        this.players.put(playerId, player);
     }
 
-    public List<Ghost> getGhosts() {
-        return ghosts;
+    public Map<UUID, Player> getPlayers() {
+        return this.players;
     }
 
-    public List<Player> getPlayers() {
-        return players;
-    }
-
-    public void setGhosts(List<Ghost> ghosts) {
-        this.ghosts = ghosts;
-    }
-
-    public void setWave(int wave) {
-        this.wave = wave;
-    }
-
-    public void setPlayers(List<Player> players) {
-        this.players = players;
-    }
-
-    public void addPlayer(Player player) {
-        this.players.add(player);
-    }
-
-    public void removePlayer(int index) {
-        this.players.remove(index);
+    public synchronized void sendObject(Object obj) {
+        try {
+            this.out.writeObject(obj);
+            this.out.flush();
+            this.out.reset();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
