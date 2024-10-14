@@ -1,5 +1,6 @@
 package com.moskuza;
 
+import com.moskuza.entity.Ghost;
 import com.moskuza.entity.Player;
 
 import javax.swing.*;
@@ -10,12 +11,14 @@ import java.io.ObjectOutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.util.ArrayList;
+import java.util.Random;
 
 public class Server extends JFrame {
 
     private JButton startButton;
     private final ArrayList<ClientHandler> clients = new ArrayList<>();
-
+    private final ArrayList<Ghost> ghosts = new ArrayList<>();
+    private final Random random = new Random();
 
     public Server() {
         setTitle("Server Control Panel");
@@ -24,11 +27,17 @@ public class Server extends JFrame {
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 
         startButton = new JButton("Start Game");
+        startButton.addActionListener(e -> startGame());
         add(startButton);
 
         setVisible(true);
+    }
 
+    private void startGame() {
+        System.out.println("Game Started...");
+        createGhosts(); // สร้างผี
         Thread.ofVirtual().start(this::startServer);
+        Thread.ofVirtual().start(this::moveGhosts); // เริ่มการขยับผี
     }
 
     private void startServer() {
@@ -45,6 +54,41 @@ public class Server extends JFrame {
             }
         } catch (IOException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private void createGhosts() {
+        for (int i = 0; i < 5; i++) {
+            Ghost ghost = new Ghost();
+            ghost.setX(random.nextInt(0, 1024));
+            ghost.setY(random.nextInt(0, 800));
+            ghosts.add(ghost);
+        }
+    }
+
+    private void moveGhosts() {
+        while (true) {
+            for (Ghost ghost : ghosts) {
+                // สุ่มทิศทางการขยับ (บวกลบ MOVE_RANGE)
+                int deltaX = random.nextInt(-10, 11); // Random movement range
+                int deltaY = random.nextInt(-10, 11);
+
+                // อัปเดตตำแหน่งผี
+                ghost.setX(Math.max(0, Math.min(ghost.getX() + deltaX, 1024)));
+                ghost.setY(Math.max(0, Math.min(ghost.getY() + deltaY, 800)));
+            }
+            broadcastGhosts(); // Broadcast ข้อมูลผี
+            try {
+                Thread.sleep(100); // Delay เพื่อไม่ให้ขยับเร็วเกินไป
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private void broadcastGhosts() {
+        for (ClientHandler client : clients) {
+            client.sendObject(ghosts);
         }
     }
 

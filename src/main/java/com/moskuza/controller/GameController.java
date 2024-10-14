@@ -9,77 +9,58 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.net.Socket;
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 public class GameController {
-    private Socket socket;
-    private ObjectInputStream in;
+    private final PlayView playView;
+    private final Map<UUID, Player> players = new ConcurrentHashMap<>();
+    private final ArrayList<Ghost> ghosts = new ArrayList<>();
     private ObjectOutputStream out;
-
-    private Map<UUID, Player> players;
-    private ArrayList<Ghost> ghosts = new ArrayList<>();
-
-    private PlayView playView;
 
     public GameController(PlayView playView) {
         this.playView = playView;
-        this.players = new HashMap<>();
-        this.ghosts = createGhosts();
+        new Thread(this::connectToServer).start();
+    }
 
-        new GhostMovementController(this.ghosts, playView);
+    private void connectToServer() {
+        try {
+            Socket socket = new Socket("localhost", 12345);
+            out = new ObjectOutputStream(socket.getOutputStream());
+            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
 
-        Thread.ofVirtual().start(() -> {
-            try {
-                this.socket = new Socket("127.0.0.1", 12345);
-                this.out = new ObjectOutputStream(socket.getOutputStream());
-                this.in = new ObjectInputStream(socket.getInputStream());
-
-                while (true) {
-
-                    Object obj = in.readObject();
-                    if (obj instanceof Player player) {
-                        updatePlayer(player.getId(), player);
-                        playView.repaint();
-                    }
+            while (true) {
+                Object obj = in.readObject();
+                if (obj instanceof Player player) {
+                    players.put(player.getId(), player);
+                    System.out.println(player.getX() + " " + player.getY());
+                    playView.repaint(); // เรียก repaint เมื่อมีการเปลี่ยนแปลงตำแหน่งผี
                 }
-            } catch (IOException e) {
-                e.printStackTrace();
-            } catch (ClassNotFoundException e) {
-                e.printStackTrace();
+                if (obj instanceof ArrayList<?>) {
+                    ghosts.clear();
+                    ghosts.addAll((ArrayList<Ghost>) obj);
+                    playView.repaint(); // เรียก repaint เมื่อมีการเปลี่ยนแปลงตำแหน่งผี
+                }
             }
-        });
-    }
-
-    public void updatePlayer(UUID playerId, Player player) {
-        this.players.put(playerId, player);
-    }
-
-    public Map<UUID, Player> getPlayers() {
-        return this.players;
+        } catch (IOException | ClassNotFoundException e) {
+            e.printStackTrace();
+        }
     }
 
     public synchronized void sendObject(Object obj) {
         try {
-            this.out.writeObject(obj);
-            this.out.flush();
-            this.out.reset();
+            out.writeObject(obj);
+            out.flush();
+            out.reset();
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
-    private ArrayList<Ghost> createGhosts() {
-        ArrayList<Ghost> ghosts = new ArrayList<>();
-        for (int i = 0; i < 5; i++) {
-            Ghost ghost = new Ghost();
-            ghost.setX(new Random().nextInt(0, 1024));
-            ghost.setY(new Random().nextInt(0, 800));
-            ghosts.add(ghost);
-        }
-
-        return ghosts;
+    public Map<UUID, Player> getPlayers() {
+        return players;
     }
 
     public ArrayList<Ghost> getGhosts() {
-        return this.ghosts;
+        return ghosts;
     }
 }
