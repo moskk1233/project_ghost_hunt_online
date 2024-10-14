@@ -1,0 +1,9 @@
+package com.moskuza.views;
+
+import javax.swing.*;
+
+public class ServerGUI extends JFrame {
+    public ServerGUI() {
+        
+    }
+}

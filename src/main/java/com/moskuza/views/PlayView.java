@@ -1,5 +1,6 @@
 package com.moskuza.views;
 
+import com.moskuza.controller.GameController;
 import com.moskuza.entity.Player;
 
 import javax.swing.*;
@@ -7,6 +8,8 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
+import java.util.Map;
+import java.util.UUID;
 
 public class PlayView extends JPanel {
     final Image backgroundImage;
@@ -15,6 +18,8 @@ public class PlayView extends JPanel {
 
     int bulletAmount;
     final Player player;
+
+    private GameController gameController;
 
     public PlayView() {
         URL backgroundUrl = getClass().getResource("/images/ghost_house.jpg");
@@ -28,8 +33,8 @@ public class PlayView extends JPanel {
         this.crosshairImage = Toolkit.getDefaultToolkit().createImage(crosshairUrl);
 
         // Add Player
-        this.player = new Player(1);
-
+        this.player = new Player();
+        this.gameController = new GameController(this);
         JPanel instance = this;
 
         this.addMouseMotionListener(new MouseAdapter() {
@@ -38,21 +43,12 @@ public class PlayView extends JPanel {
                 int mouseX = e.getX();
                 int mouseY = e.getY();
 
-                Point playerPoint = player.getPoint();
-                playerPoint.setLocation(mouseX, mouseY);
+                player.setX(mouseX);
+                player.setY(mouseY);
 
-                instance.repaint();
-            }
+                gameController.sendObject(player);
 
-            @Override
-            public void mouseDragged(MouseEvent e) {
-                int mouseX = e.getX();
-                int mouseY = e.getY();
-
-                Point playerPoint = player.getPoint();
-                playerPoint.setLocation(mouseX, mouseY);
-
-                instance.repaint();
+                instance.repaint(); // เรียก repaint เพื่อแสดงผลการเคลื่อนไหวของ Player
             }
         });
     }
@@ -67,11 +63,18 @@ public class PlayView extends JPanel {
 
 
         g.setFont(new Font("Tahoma", Font.PLAIN, 20));
-        Point playerPoint = this.player.getPoint();
         g.setColor(Color.WHITE);
+
         // Draw Player
-        g.drawString("Player %d".formatted(this.player.getId()), playerPoint.x - 30, playerPoint.y - 20);
-        g.drawImage(this.crosshairImage, playerPoint.x - 20, playerPoint.y - 20, 35, 35, this);
+//        g.drawString("Player %s".formatted(this.player.getId().toString().substring(0, 8)), player.getX() - 60, player.getY() - 20);
+//        g.drawImage(this.crosshairImage, player.getX() - 20, player.getY() - 20, 35, 35, this);
+
+        for (Map.Entry<UUID, Player> entry : gameController.getPlayers().entrySet()) {
+            Player player = entry.getValue();
+            System.out.println(player.getX() + " " + player.getY());
+            g.drawString("Player %s".formatted(player.getId().toString().substring(0, 8)), player.getX() - 60, player.getY() - 20);
+            g.drawImage(this.crosshairImage, player.getX() - 20, player.getY() - 20, 35, 35, this);
+        }
 
         // Draw Scoreboard
         g.drawString("Scoreboard", 0, 20);
