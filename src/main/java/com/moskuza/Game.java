@@ -26,9 +26,11 @@ public class Game extends JFrame{
 
         DeveloperView developerView = new DeveloperView(() -> cardLayout.show(cardPanel, "Lobby"));
 
-        JoinView joinView = new JoinView(() -> cardLayout.show(cardPanel, "Lobby"));
-
         PlayView playView = new PlayView();
+        JoinView joinView = new JoinView(playView.getGameController(),
+                                        () -> cardLayout.show(cardPanel, "Lobby"),
+                                        () -> cardLayout.show(cardPanel, "Play"));
+
 
         cardPanel.add(lobbyView, "Lobby");
         cardPanel.add(developerView, "Developer");
@@ -37,10 +39,7 @@ public class Game extends JFrame{
 
         add(cardPanel);
 
-        //DEBUG
-        cardLayout.show(cardPanel, "Play");
-
-//                cardLayout.show(cardPanel, "Lobby");
+        cardLayout.show(cardPanel, "Lobby");
     }
 
     public static void main(String[] args) {

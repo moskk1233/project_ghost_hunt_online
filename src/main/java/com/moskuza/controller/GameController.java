@@ -15,20 +15,25 @@ public class GameController {
     private final PlayView playView;
     private final Map<UUID, Player> players = new ConcurrentHashMap<>();
     private final ArrayList<Ghost> ghosts = new ArrayList<>();
-    private String currentWave = "";  ;
+    private int currentWave = 1;  ;
     private ObjectOutputStream out;
+    private ObjectInputStream in;
 
     public GameController(PlayView playView) {
         this.playView = playView;
-        new Thread(this::connectToServer).start();
+//        new Thread(this::connectToServer).start();
     }
 
-    private void connectToServer() {
-        try {
-            Socket socket = new Socket("localhost", 12345);
-            out = new ObjectOutputStream(socket.getOutputStream());
-            ObjectInputStream in = new ObjectInputStream(socket.getInputStream());
+    public void connectToServer(String serverIp) throws IOException {
+        Socket socket = new Socket(serverIp, 12345);
+        out = new ObjectOutputStream(socket.getOutputStream());
+        in = new ObjectInputStream(socket.getInputStream());
 
+        new Thread(this::listenFromServer).start();
+    }
+
+    private void listenFromServer() {
+        try {
             while (true) {
                 Object obj = in.readObject();
                 if (obj instanceof Player player) {
@@ -42,13 +47,15 @@ public class GameController {
                     playView.repaint(); // เรียก repaint เมื่อมีการเปลี่ยนแปลงตำแหน่งผี
                 }
 
-                if (obj instanceof String message && message.startsWith("Wave")) {
-                    currentWave = message;
-                    playView.getPlayer().setAmmo(5);
-                    playView.repaint();
+                if (obj instanceof Integer serverWave) {
+                    if (currentWave != serverWave) {
+                        currentWave = serverWave;
+                        playView.getPlayer().setAmmo(5);
+                        playView.repaint();
+                    }
                 }
             }
-        } catch (IOException | ClassNotFoundException e) {
+        } catch (ClassNotFoundException | IOException e) {
             e.printStackTrace();
         }
     }
@@ -70,7 +77,7 @@ public class GameController {
         return ghosts;
     }
 
-    public String getWave() {
+    public int getWave() {
         return currentWave;
     }
 }
