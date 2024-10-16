@@ -13,9 +13,7 @@ import java.net.Socket;
 import java.util.ArrayList;
 import java.util.Random;
 
-public class Server extends JFrame {
-
-    private JButton startButton;
+public class Server {
     private int currentWave = 1;
 
     private final ArrayList<Ghost> ghosts = new ArrayList<>();
@@ -24,16 +22,7 @@ public class Server extends JFrame {
     public final ArrayList<ClientHandler> clients = new ArrayList<>();
 
     public Server() {
-        setTitle("Server Control Panel");
-        setSize(new Dimension(200, 100));
-        setResizable(false);
-        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-
-        startButton = new JButton("Start Game");
-        startButton.addActionListener(e -> startGame());
-        add(startButton);
-
-        setVisible(true);
+        startGame();
     }
 
     private void startGame() {
