@@ -16,9 +16,12 @@ import java.util.Random;
 public class Server extends JFrame {
 
     private JButton startButton;
-    private final ArrayList<ClientHandler> clients = new ArrayList<>();
+    private int currentWave = 1;
+
     private final ArrayList<Ghost> ghosts = new ArrayList<>();
     private final Random random = new Random();
+
+    public final ArrayList<ClientHandler> clients = new ArrayList<>();
 
     public Server() {
         setTitle("Server Control Panel");
@@ -48,12 +51,12 @@ public class Server extends JFrame {
 
                 System.out.println("Client connected: " + socket);
 
-                ClientHandler clientHandler = new ClientHandler(socket);
+                ClientHandler clientHandler = new ClientHandler(this, socket);
                 clients.add(clientHandler);
                 Thread.ofVirtual().start(clientHandler);
             }
         } catch (IOException e) {
-            throw new RuntimeException(e);
+            e.printStackTrace();
         }
     }
 
@@ -68,21 +71,64 @@ public class Server extends JFrame {
 
     private void moveGhosts() {
         while (true) {
-            for (Ghost ghost : ghosts) {
-                // สุ่มทิศทางการขยับ (บวกลบ MOVE_RANGE)
-                int deltaX = random.nextInt(-10, 11); // Random movement range
-                int deltaY = random.nextInt(-10, 11);
+            boolean allGhostDead = true;
 
-                // อัปเดตตำแหน่งผี
-                ghost.setX(Math.max(0, Math.min(ghost.getX() + deltaX, 1024)));
-                ghost.setY(Math.max(0, Math.min(ghost.getY() + deltaY, 800)));
+            for (Ghost ghost : ghosts) {
+                if (!ghost.isDead()) {
+                    // สุ่มทิศทางการขยับ (บวกลบ MOVE_RANGE)
+                    int deltaX = random.nextInt(-10, 11); // Random movement range
+                    int deltaY = random.nextInt(-10, 11);
+
+                    // อัปเดตตำแหน่งผี
+                    ghost.setX(Math.max(0, Math.min(ghost.getX() + deltaX, 1024)));
+                    ghost.setY(Math.max(0, Math.min(ghost.getY() + deltaY, 800)));
+
+                    if (isGhostCollision(ghost)) {
+                        handleGhostCollision(ghost);
+                    }
+
+                    allGhostDead = false;
+                }
             }
+
+            if (allGhostDead && currentWave < 10) {
+                currentWave++;
+                broadcastWaveInfo();
+                retreiveGhosts();
+            }
+
             broadcastGhosts(); // Broadcast ข้อมูลผี
             try {
                 Thread.sleep(100); // Delay เพื่อไม่ให้ขยับเร็วเกินไป
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void retreiveGhosts() {
+        for (Ghost ghost : ghosts) {
+            ghost.setDead(false);
+            ghost.setX(random.nextInt(0, 1024));
+            ghost.setY(random.nextInt(0, 800));
+        }
+    }
+
+    private boolean isGhostCollision(Ghost ghost) {
+        return ghost.getX() > 944 || ghost.getX() < 50 || ghost.getY() > 670 || ghost.getY() < 10;
+    }
+
+    private void handleGhostCollision(Ghost ghost) {
+        if (ghost.getX() >= 944) {
+            ghost.setX(944);
+        } else if (ghost.getX() <= 50) {
+            ghost.setX(50);
+        }
+
+        if (ghost.getY() >= 670) {
+            ghost.setY(670);
+        } else if (ghost.getY() <= 10) {
+            ghost.setY(10);
         }
     }
 
@@ -94,10 +140,12 @@ public class Server extends JFrame {
 
     private class ClientHandler implements Runnable {
         private Socket socket;
+        private Server server;
         private ObjectOutputStream out;
         private ObjectInputStream in;
 
-        public ClientHandler(Socket socket) {
+        public ClientHandler(Server server, Socket socket) {
+            this.server = server;
             this.socket = socket;
         }
 
@@ -112,9 +160,19 @@ public class Server extends JFrame {
                     if (obj instanceof Player player) {
                         broadcast(player);
                     }
+
+                    if (obj instanceof Ghost updatedGhost) {
+//                        System.out.println(updatedGhost.getId());
+                        for (Ghost ghost : ghosts) {
+                            if (ghost.getId().equals(updatedGhost.getId())) {
+                                System.out.println(ghost.getId());
+                                ghost.setDead(true);
+                            }
+                        }
+                    }
                 }
             } catch (Exception e) {
-                e.printStackTrace();
+                server.clients.removeIf(client -> client.socket == socket);
             } finally {
                 try {
                     socket.close();
@@ -129,7 +187,6 @@ public class Server extends JFrame {
         public synchronized void sendObject(Object obj) {
             try {
                 this.out.writeObject(obj);
-                this.out.flush();
                 this.out.reset();
             } catch (IOException e) {
                 throw new RuntimeException(e);
@@ -140,6 +197,12 @@ public class Server extends JFrame {
     private void broadcast(Object obj) {
         for (ClientHandler client : clients) {
             client.sendObject(obj);
+        }
+    }
+
+    private void broadcastWaveInfo() {
+        for (ClientHandler client : clients) {
+            client.sendObject("Wave " + currentWave);
         }
     }
 
