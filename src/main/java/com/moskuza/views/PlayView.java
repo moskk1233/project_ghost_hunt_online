@@ -10,18 +10,20 @@ import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.net.URL;
-import java.util.Map;
-import java.util.UUID;
+import java.util.ArrayList;
 
 public class PlayView extends JPanel {
-    final Image backgroundImage;
-    final Image bulletImage;
-    final Image crosshairImage;
-    final Image ghostImage;
-    int bulletAmount;
-    final Player player;
+    private final Image backgroundImage;
+    private final Image bulletImage;
+    private final Image crosshairImage;
+    private final Image ghostImage;
+    private final Player player;
+
     private final GameController gameController;
 
+    public Player getPlayer() {
+        return player;
+    }
 
     public PlayView() {
         setSize(new Dimension(1024, 800));
@@ -31,7 +33,6 @@ public class PlayView extends JPanel {
 
         URL bulletUrl = getClass().getResource("/images/bullet.png");
         this.bulletImage = Toolkit.getDefaultToolkit().createImage(bulletUrl);
-        this.bulletAmount = 5;
 
         URL crosshairUrl = getClass().getResource("/images/crosshair.png");
         this.crosshairImage = Toolkit.getDefaultToolkit().createImage(crosshairUrl);
@@ -54,13 +55,33 @@ public class PlayView extends JPanel {
                 instance.repaint(); // เรียก repaint เพื่อแสดงผลการเคลื่อนไหวของ Player
             }
         });
+
+        this.addMouseListener(new MouseAdapter() {
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                for (Ghost ghost : gameController.getGhosts()) {
+                    if (player.isHit(ghost) && !ghost.isDead() && player.getAmmo() > 0) {
+                        player.setScore(player.getScore() + 100);
+                        System.out.println(ghost.getId());
+                        ghost.setDead(true);
+                        gameController.sendObject(ghost);
+                        break;
+                    }
+                }
+                player.shoot();
+                gameController.sendObject(player);
+                instance.repaint();
+            }
+        });
     }
 
     @Override
     public void paint(Graphics g) {
         super.paint(g); // เรียก super.paint(g) เพื่อให้แน่ใจว่า Panel ได้รับการวาดอย่างถูกต้อง
         g.drawImage(this.backgroundImage, 0, 0, 1024, 800, this);
-        for (int i = 0; i < this.bulletAmount; i++) {
+
+        // Draw Bullet
+        for (int i = 0; i < this.player.getAmmo(); i++) {
             final int BULLET_OFFSET = 40;
             g.drawImage(this.bulletImage, (BULLET_OFFSET * i), 700, 60, 60, this);
         }
@@ -70,25 +91,30 @@ public class PlayView extends JPanel {
 
         // Draw Ghosts
         for (Ghost ghost : gameController.getGhosts()) {
+            if (ghost.isDead()) continue;
             g.drawImage(this.ghostImage, ghost.getX(), ghost.getY(), 80, 80, this);  // วาดผี
             g.drawRect(ghost.getX(), ghost.getY(), 80, 80); // Hitbox
         }
 
         // Draw Player
-        for (Map.Entry<UUID, Player> entry : gameController.getPlayers().entrySet()) {
-            Player player = entry.getValue();
+        g.drawString("Scoreboard", 0, 20);
+        int scoreY = 50;
+        ArrayList<Player> sortedPlayers = new ArrayList<>(gameController.getPlayers().values());
+        sortedPlayers.sort((p1, p2) -> Integer.compare(p2.getScore(), p1.getScore()));
+        for (Player player : sortedPlayers) {
             g.drawString("Player %s".formatted(player.getId().toString().substring(0, 8)), player.getX() - 60, player.getY() - 20);
             g.drawImage(this.crosshairImage, player.getX() - 20, player.getY() - 20, 35, 35, this);
-        }
 
-        // Draw Scoreboard
-        g.drawString("Scoreboard", 0, 20);
-        for (int i = 0; i < 3; i++) {
-            g.drawString("Player %d: 12312".formatted(i + 1), 0, 20 + (i + 1) * 30);
+            // Draw Score
+            g.drawString("Player %s: %d".formatted(player.getId().toString().substring(0, 8), player.getScore()), 0, scoreY);
+            scoreY += 30;
         }
-
         // Draw Wave
+        String currentWave = gameController.getWave();
+        if (currentWave.isEmpty()) {
+            currentWave = "Wave 1";
+        }
         g.setFont(new Font(g.getFont().getName(), getFont().getStyle(), 40));
-        g.drawString("Wave %d".formatted(1), this.getWidth() / 2, 50);
+        g.drawString(currentWave, this.getWidth() / 2, 50);
     }
 }

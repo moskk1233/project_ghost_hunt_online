@@ -1,21 +1,17 @@
 package com.moskuza.entity;
 
-import java.util.UUID;
+import java.io.Serial;
 
 public class Player extends Entity {
-    private final UUID id;
+    @Serial
+    private static final long serialVersionUID = 4421699854961570315L;
     private int ammo;
     private int score;
 
     public Player() {
         super();
-        this.id = UUID.randomUUID();
         this.ammo = 5;
         this.score = 0;
-    }
-
-    public UUID getId() {
-        return this.id;
     }
 
     public int getAmmo() {
@@ -32,5 +28,13 @@ public class Player extends Entity {
 
     public void setScore(int score) {
         this.score = score;
+    }
+
+    public void shoot() {
+        this.ammo = Math.max(0, this.ammo - 1);
+    }
+
+    public boolean isHit(Ghost ghost) {
+        return this.getX() >= ghost.getX() && this.getX() <= ghost.getX() + 80 && this.getY() >= ghost.getY() && this.getY() <= ghost.getY() + 80;
     }
 }

@@ -15,6 +15,7 @@ public class GameController {
     private final PlayView playView;
     private final Map<UUID, Player> players = new ConcurrentHashMap<>();
     private final ArrayList<Ghost> ghosts = new ArrayList<>();
+    private String currentWave = "";  ;
     private ObjectOutputStream out;
 
     public GameController(PlayView playView) {
@@ -32,13 +33,19 @@ public class GameController {
                 Object obj = in.readObject();
                 if (obj instanceof Player player) {
                     players.put(player.getId(), player);
-                    System.out.println(player.getX() + " " + player.getY());
                     playView.repaint(); // เรียก repaint เมื่อมีการเปลี่ยนแปลงตำแหน่งผี
                 }
+
                 if (obj instanceof ArrayList<?>) {
                     ghosts.clear();
                     ghosts.addAll((ArrayList<Ghost>) obj);
                     playView.repaint(); // เรียก repaint เมื่อมีการเปลี่ยนแปลงตำแหน่งผี
+                }
+
+                if (obj instanceof String message && message.startsWith("Wave")) {
+                    currentWave = message;
+                    playView.getPlayer().setAmmo(5);
+                    playView.repaint();
                 }
             }
         } catch (IOException | ClassNotFoundException e) {
@@ -49,7 +56,6 @@ public class GameController {
     public synchronized void sendObject(Object obj) {
         try {
             out.writeObject(obj);
-            out.flush();
             out.reset();
         } catch (IOException e) {
             e.printStackTrace();
@@ -62,5 +68,9 @@ public class GameController {
 
     public ArrayList<Ghost> getGhosts() {
         return ghosts;
+    }
+
+    public String getWave() {
+        return currentWave;
     }
 }
