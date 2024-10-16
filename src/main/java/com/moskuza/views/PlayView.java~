@@ -114,8 +114,11 @@ public class PlayView extends JPanel {
             scoreY += 30;
         }
         // Draw Wave
-        int currentWave = gameController.getWave();
+        String currentWave = gameController.getWave();
+        if (currentWave.isEmpty()) {
+            currentWave = "Wave 1";
+        }
         g.setFont(new Font(g.getFont().getName(), getFont().getStyle(), 40));
-        g.drawString("Wave %d".formatted(currentWave), this.getWidth() / 2, 50);
+        g.drawString(currentWave, this.getWidth() / 2, 50);
     }
 }

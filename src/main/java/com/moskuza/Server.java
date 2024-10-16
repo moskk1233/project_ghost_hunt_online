@@ -39,8 +39,8 @@ public class Server extends JFrame {
     private void startGame() {
         System.out.println("Game Started...");
         createGhosts(); // สร้างผี
-        Thread.ofVirtual().start(this::startServer);
-        Thread.ofVirtual().start(this::moveGhosts); // เริ่มการขยับผี
+        new Thread(this::startServer).start();
+        new Thread(this::moveGhosts).start();
     }
 
     private void startServer() {
@@ -53,7 +53,7 @@ public class Server extends JFrame {
 
                 ClientHandler clientHandler = new ClientHandler(this, socket);
                 clients.add(clientHandler);
-                Thread.ofVirtual().start(clientHandler);
+                new Thread(clientHandler).start();
             }
         } catch (IOException e) {
             e.printStackTrace();
@@ -93,7 +93,6 @@ public class Server extends JFrame {
 
             if (allGhostDead && currentWave < 10) {
                 currentWave++;
-                broadcastWaveInfo();
                 retreiveGhosts();
             }
 
@@ -162,7 +161,6 @@ public class Server extends JFrame {
                     }
 
                     if (obj instanceof Ghost updatedGhost) {
-//                        System.out.println(updatedGhost.getId());
                         for (Ghost ghost : ghosts) {
                             if (ghost.getId().equals(updatedGhost.getId())) {
                                 System.out.println(ghost.getId());
@@ -170,6 +168,8 @@ public class Server extends JFrame {
                             }
                         }
                     }
+
+                    broadcastWaveInfo();
                 }
             } catch (Exception e) {
                 server.clients.removeIf(client -> client.socket == socket);
@@ -202,7 +202,7 @@ public class Server extends JFrame {
 
     private void broadcastWaveInfo() {
         for (ClientHandler client : clients) {
-            client.sendObject("Wave " + currentWave);
+            client.sendObject(currentWave);
         }
     }
 
