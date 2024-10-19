@@ -131,8 +131,8 @@ public class PlayView extends JPanel {
                 g.setFont(new Font(g.getFont().getName(), getFont().getStyle(), 50));
                 g.setColor(Color.ORANGE);
                 g.drawString("WINNER!!", this.getWidth() / 2 - 100, this.getHeight() / 2 - 50);
-                g.drawString(sortedPlayers.getFirst().getId().toString().substring(0, 8), this.getWidth() / 2 - 100, this.getHeight() / 2);
-                g.setFont(new Font(g.getFont().getName(), getFont().getStyle(), 50));
+                g.drawString(sortedPlayers.getFirst().getId().toString(), this.getWidth() / 2 - 100, this.getHeight() / 2);
+                g.setFont(new Font(g.getFont().getName().substring(0, 8), getFont().getStyle(), 50));
             }
         }
     }
