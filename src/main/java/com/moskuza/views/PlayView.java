@@ -117,5 +117,22 @@ public class PlayView extends JPanel {
         int currentWave = gameController.getWave();
         g.setFont(new Font(g.getFont().getName(), getFont().getStyle(), 40));
         g.drawString("Wave %d".formatted(currentWave), this.getWidth() / 2, 50);
+
+        if (currentWave == 10) {
+            boolean allDead = true;
+            for (Ghost ghost : gameController.getGhosts()) {
+                if (!ghost.isDead()) {
+                    allDead = false;
+                    break;
+                }
+            }
+
+            if (allDead) {
+                g.setFont(new Font(g.getFont().getName(), getFont().getStyle(), 50));
+                g.setColor(Color.ORANGE);
+                g.drawString("WINNER!!", this.getWidth() / 2 - 100, this.getHeight() / 2 - 50);
+                g.setFont(new Font(g.getFont().getName(), getFont().getStyle(), 50));
+            }
+        }
     }
 }

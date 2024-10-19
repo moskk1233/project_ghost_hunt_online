@@ -21,6 +21,7 @@ public class GameController {
 
     public GameController(PlayView playView) {
         this.playView = playView;
+//        new Thread(this::connectToServer).start();
     }
 
     public void connectToServer(String serverIp) throws IOException {
