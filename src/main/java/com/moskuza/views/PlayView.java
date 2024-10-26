@@ -5,10 +5,14 @@ import com.moskuza.controller.GameController;
 import com.moskuza.entity.Ghost;
 import com.moskuza.entity.Player;
 
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.Clip;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
+import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 
@@ -18,8 +22,27 @@ public class PlayView extends JPanel {
     private final Image crosshairImage;
     private final Image ghostImage;
     private final Player player;
+    private Clip gunSound;
 
     private final GameController gameController;
+
+    private Clip loadSound(String path) throws Exception {
+        URL url = getClass().getResource(path);
+        AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(url);
+        Clip clip = AudioSystem.getClip();
+        clip.open(audioInputStream);
+        return clip;
+    }
+
+    private void playSound(Clip clip) {
+        if (clip != null) {
+            if (clip.isRunning()) {
+                clip.stop();
+            }
+            clip.setFramePosition(0);
+            clip.start();
+        }
+    }
 
     public Player getPlayer() {
         return player;
@@ -43,6 +66,13 @@ public class PlayView extends JPanel {
 
         URL ghostUrl = getClass().getResource("/images/ghost.png");
         this.ghostImage = Toolkit.getDefaultToolkit().createImage(ghostUrl);
+
+        try {
+            this.gunSound = this.loadSound("/sounds/gun.wav");
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
 
         // Add Player
         this.player = new Player();
@@ -71,6 +101,10 @@ public class PlayView extends JPanel {
                         gameController.sendObject(ghost);
                         break;
                     }
+                }
+
+                if (player.getAmmo() > 0) {
+                    playSound(gunSound);
                 }
                 player.shoot();
                 gameController.sendObject(player);
